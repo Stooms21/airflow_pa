@@ -1,0 +1,26 @@
+# .env et secrets
+.env
+.env.*
+*.key
+*.pem
+*.json
+config/secrets/
+config/*.env
+
+# Airflow
+logs/
+__pycache__/
+*.pyc
+
+# Docker
+*.pid
+*.db
+*.sock
+
+# VSCode et autres IDE
+.vscode/
+.idea/
+
+# Fichiers temporaires
+*.log
+.DS_Store
