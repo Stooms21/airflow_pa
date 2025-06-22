@@ -40,8 +40,8 @@ USING (
       quote_volume,
       nb_trades
     FROM `{PROJECT_ID}.{TABLE_SRC}`
-    WHERE timestamp_utc >= TIMESTAMP_TRUNC(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR), HOUR)
-      AND timestamp_utc < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR)
+    WHERE timestamp_utc >= TIMESTAMP_TRUNC(TIMESTAMP('{{ execution_date }}'), HOUR)
+      AND timestamp_utc < TIMESTAMP_ADD(TIMESTAMP_TRUNC(TIMESTAMP('{{ execution_date }}'), HOUR), INTERVAL 1 HOUR)
     WINDOW w AS (
       PARTITION BY symbol
       ORDER BY timestamp_utc
@@ -66,6 +66,7 @@ WHEN NOT MATCHED THEN INSERT (
 )
 """
 
+
 default_args = {
     "owner": "airflow",
     "retries": 2,
@@ -77,7 +78,7 @@ with DAG(
     description="Agrège les données 1 minute en 1 heure et met à jour la table BigQuery",
     start_date=datetime(2025, 6, 16),
     schedule_interval="0 * * * *",  # Every hour at 00 minutes
-    catchup=False,
+    catchup=True,
     max_active_runs=1,
     default_args=default_args,
     tags=["binance", "klines", "bq", "agg"],
