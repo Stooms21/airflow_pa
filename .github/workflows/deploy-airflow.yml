@@ -45,5 +45,6 @@ jobs:
         script: |
           cd ~/airflow_pa
           cp ~/secrets/${{ env.ENV_FILE }} .env
-          docker compose down
           docker compose up -d --build
+          docker compose restart airflow-scheduler airflow-worker airflow-webserver
+
