@@ -1,0 +1,49 @@
+name: Deploy Airflow
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to GCP VM
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set environment variables depending on branch
+      id: set-env
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "VM_IP=${{ secrets.PROD_VM_IP }}" >> $GITHUB_ENV
+          echo "ENV_FILE=.env.prod" >> $GITHUB_ENV
+        else
+          echo "VM_IP=${{ secrets.DEV_VM_IP }}" >> $GITHUB_ENV
+          echo "ENV_FILE=.env.dev" >> $GITHUB_ENV
+        fi
+        echo "USER=${{ secrets.GCP_USER }}" >> $GITHUB_ENV
+
+    - name: Upload project to VM
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ env.VM_IP }}
+        username: ${{ env.USER }}
+        key: ${{ secrets.GCP_SSH_KEY }}
+        source: "."
+        target: "~/airflow_pa"
+
+    - name: SSH and deploy on VM
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.VM_IP }}
+        username: ${{ env.USER }}
+        key: ${{ secrets.GCP_SSH_KEY }}
+        script: |
+          cd ~/airflow_pa
+          cp ~/secrets/${{ env.ENV_FILE }} .env
+          docker compose down
+          docker compose up -d --build
